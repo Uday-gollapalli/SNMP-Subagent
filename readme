@@ -1,0 +1,62 @@
+This assignment deals with the extension of default SNMP agent to cater our needs. There are many ways to extend the agent like using extend directive,using pass_persist directive, using AgentX protocol. 
+I choose AgentX method over those two because of its modular nature which you can plug or unplug it at any time and it doesn't interrupt with main agent. 
+A sub-agent written using AgentX can be decoupled from default snmp agent and can be run on another host carried over TCP. 
+
+**Configuring the SNMP agent**
+
+Just add the following line to [snmpd.conf]() in the [EXTENDING THE AGENT]() field
+ 
+    agentXSocket    tcp:<ip where subagent runs>:<port>
+
+The configuration to be added to [snmpd.conf]() to run my agent 
+
+    agentXSocket    tcp:localhost:705
+
+**Implementing the Sub agent**
+
+I have implemented the sub agent in Golang.
+First step is to install Golang on the server.
+ 
+    sudo curl -O https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
+
+    sudo tar -xvf go1.6.linux-amd64.tar.gz
+
+    sudo mv go /usr/local
+
+Let's set GOPATH value, which tells Go where to look for its files.
+
+    sudo nano ~/.profile
+
+At the end of the file, add the following lines:
+
+    export PATH=$PATH:/usr/local/go/bin
+    export GOPATH=$HOME/go
+
+Source the above modified file.
+
+    source ~/.profile
+
+Installing the Prerequisites.
+
+    go get gopkg.in/errgo.v1
+    go get github.com/posteo/go-agentx
+
+Building the sub agent.
+
+    go build agentx.go
+
+Running the subagent(agentx daemon).
+ 
+    ./agentx
+    
+Querying the newly implemented sub agent(Open it in a other terminal).
+
+    $ snmpwalk -Cc -v2c -c public localhost:161 1.3.6.1.4.1.4171.40
+    
+    iso.3.6.1.4.1.4171.40.1 = INTEGER: 1473761130
+    iso.3.6.1.4.1.4171.40.2 = STRING: "70"
+    iso.3.6.1.4.1.4171.40.3 = STRING: "234.49999999999997"
+    iso.3.6.1.4.1.4171.40.4 = STRING: "6.2"
+
+**Note:** It is not possible to represent y(t) values in counter32 because they are actually floating numbers. There is no such datatype to represent float type in snmp. So i used `octetstring` type.
+If you want to change the configuration parameters, Just change the counters.conf file and query the agent.
